@@ -4,7 +4,7 @@ This is an open-source PDF tool.
 This tool is based on 'Didier Stevens' PDF tools. These PDF tools are available at [Didier Stevens blog](http://blog.didierstevens.com)
 
 
-** List of Tools **
+**List of Tools**
 
 ## 1. PDF iD
 The PDFiD tool will anaylyse the PDF or any file your provide it, but the real focus remains over PDF files. It will visualize the tag names that make a PDF file. It will also show any javascript code or file embedded in the PDF, any other file (including executables) and any code embedded to the file. Using this tool you can also disarm javascript of a PDF file.
@@ -18,5 +18,6 @@ Using this tool you can create a PDF file where you can store any other file ins
 ## 4. Create PDF Javascript
 Using this tool you can add javascript code or javascript file to create a PDF file using that code as embedded.
 
-** Future **
+**Future**
+
 In future I will add more pdf tools to this tool.
