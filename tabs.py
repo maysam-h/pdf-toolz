@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
 """
+    __Reference:
+        https://www.delftstack.com/tutorial/tkinter-tutorial/tkinter-checkbutton/
+
 
     #TODO:
         * the 'make*commandready() funtions can be added to an key value array and if the key was not in array return false
@@ -87,6 +90,7 @@ def isVariableBlank(str):
 def createTab(tabName, frameName):
     """ This function after creating the notebook, creates a tab """
 
+    # Adds tab of the notebook
     tabVariable = ttk.Frame(frameName)
     frameName.add(tabVariable, text=tabName)
 
@@ -131,7 +135,7 @@ def makeThePDFIdCommandReady(nbr):
         switchesList.append("-s")
 
     if (nbr["outputLogFile"].get() == True):
-        outfileName = askPrompt(gis.__file_prompt_title__, gis.__output_file_text__)
+        outfileName = askPrompt(gis.__file_prompt_title__, gis.__output_file_text__) #TODO: tell the user some how that the file is saved
         switchesList.append("-o " + outfileName + ".txt")
     else:
         switchesList.append("")
@@ -186,8 +190,6 @@ def makePDFCreationCommandReady(nbr, embedStatus):
     #               "hideEmbededFile": hideEmbededFile, "textToDisplay": textToDisplay,
     #               "fileNameInPDFObj": fileNameInPDFObj, "javascriptCode": javascriptCode,
     #               "javascriptFile": javascriptFile}
-
-    #./PDF-Tools/makepdf/make-pdf-embedded.py --name=testEmbed.txt --message='_a test message for embeding in pdf file_' -b -a ./PDF-Tools/myfile.txt ./PDF-Tools/mypdf.pdf
 
 
     switchesList = []

@@ -3,7 +3,6 @@
 
 """
 
-
 from tkinter import *
 import guideInfoStrings as gis
 

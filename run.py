@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 """
-
 """
 
 
@@ -23,9 +22,9 @@ def main():
     """ everything begins from here """
 
 
-    # The following lines will create the GUI
     program = Tk()
     program.title(gis.__app_name__)
+    #program.configure(background=gis.__color_darkgrey__)
     program.geometry(gis.__app_width_height__)
     program.resizable(0,0)
 
