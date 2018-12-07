@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 """
-
 # TODO: filemenu.add_command(label = "Save as...", command = donothing) This function will be implemented later to save the puur pdf and without its attached files
 # TODO: keep the 'unload the file' button disabled until a PDF file is added
 """
@@ -80,6 +79,5 @@ def createMenu(program):
 
     menubar.add_cascade(label="Help", menu=helpmenu)
 
-    # This is where we will configure the menubar
     program.config(menu=menubar)
 

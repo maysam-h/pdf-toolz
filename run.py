@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
 """
+    __reference:
+
+
 """
 
 
@@ -21,10 +24,9 @@ def updateVariableText(thisTab, returnString):
 def main():
     """ everything begins from here """
 
-
+    global program
     program = Tk()
     program.title(gis.__app_name__)
-    #program.configure(background=gis.__color_darkgrey__)
     program.geometry(gis.__app_width_height__)
     program.resizable(0,0)
 

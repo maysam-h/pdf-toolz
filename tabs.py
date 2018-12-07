@@ -2,7 +2,6 @@
 
 """
     __Reference:
-        https://www.delftstack.com/tutorial/tkinter-tutorial/tkinter-checkbutton/
 
 
     #TODO:
@@ -47,13 +46,14 @@ from tkinter import simpledialog
 import os
 import outputFunctions
 import guideInfoStrings as gis
+import run
 
 """ **************************** | Helper functions and variables | **************************** """
 __loadedFileName__ = ""
 
 
 def askPrompt(title, promptText):
-    """ this function when called, prompts the user for a text """
+    """ this function prompts the user for a text """
     userInput = simpledialog.askstring(title, promptText)
     return userInput
 
@@ -72,19 +72,20 @@ def excuteCommand(command, switchesList, targetFile):
         commandStr = command + " " + stringOfSwitches + targetFile
 
         outputResult = os.popen(commandStr).read()
+
+
+        """ subprocess does not work here with 3 argument """
+        #import subprocess
+        #commandStr = stringOfSwitches + targetFile
+        #commandResult = subprocess.run([command, commandStr], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #outputResult = commandResult.stdout.decode('utf-8')
+
         if(disarmStatus):
             messagebox.showinfo(gis.__disarm_title__, "The PDF file (" + __loadedFileName__ + ") is disarmed. The Javascript (if any) in PDF file is removed and a copy of the file is saved in the same path.")
         return str(outputResult)
     else:
         return gis.__pdf_not_selected__
 
-
-def isVariableBlank(str):
-
-    if (str == None):
-        return ""
-    else:
-        return " " + str
 
 
 def createTab(tabName, frameName):
@@ -97,9 +98,8 @@ def createTab(tabName, frameName):
     return tabVariable
 
 
-def createChkBox(location, textString, variableName, fontLabel, rowLabel, columnLabel, stickyLabel):
+def createChkBox(location, textString, fontLabel, rowLabel, columnLabel, stickyLabel):
     """ this function creates a checkbox using the given information """
-    # TODO remove the extra parameter " variableName "
 
     variableName = BooleanVar()
     variableName.set(False)
@@ -107,16 +107,24 @@ def createChkBox(location, textString, variableName, fontLabel, rowLabel, column
     return variableName
 
 
+def isInteger(char):
+    try:
+        int(char)
+        return True
+    except ValueError:
+        return False
+
+
+
 """ **************************** | Make Command ready functions | **************************** """
 
-def makeThePDFIdCommandReady(nbr):
+def makeThePDFIdCommandReady(program, nbr):
     """ This function makes the PDF ID command ready and prints the result to the textbox """
-
-    #{"allNames": allNames, "extraData": extraData, "noZero": noZero, "noJavascript": noJavascript, "fileScan": fileScan,
-     #"outputLogFile": outputLogFile}
 
     switchesList = []
     programName = gis.__pdf_id_name__
+    outFileStatus = False
+    outFileNameStr = ""
 
 
     if(nbr["allNames"].get() == True):
@@ -132,37 +140,72 @@ def makeThePDFIdCommandReady(nbr):
         switchesList.append("-d")
 
     if (nbr["fileScan"].get() == True):
-        switchesList.append("-s")
+        switchesList.append("-f")
 
     if (nbr["outputLogFile"].get() == True):
-        outfileName = askPrompt(gis.__file_prompt_title__, gis.__output_file_text__) #TODO: tell the user some how that the file is saved
-        switchesList.append("-o " + outfileName + ".txt")
+        outfileName = askPrompt(gis.__file_prompt_title__, gis.__output_file_text__)
+        if(outfileName == '' or outfileName == None):
+            messagebox.showerror(gis.__noOutPutName_title__, gis.__noOutPutName_text__)
+        else:
+            outFileStatus = True
+            outFileNameStr = outfileName + ".txt"
+            switchesList.append("-o " + outFileNameStr)
+
+    if (nbr["scanADirectory"].get() == True):
+        directoryPath = askPrompt(gis.__directorypath_title__, gis.__directorypath_text__)
+        if(directoryPath == '' or directoryPath == None):
+            messagebox.showinfo(gis.__directorypath_NO_title__, gis.__directorypath_NO_text__)
+            return
+        else:
+            gis.__loaded_file_path__ = directoryPath
+            run.updateVariableText(program, "Directory: " + directoryPath)
+            switchesList.append("-s")
+
     else:
         switchesList.append("")
 
+
     result = excuteCommand(programName, switchesList, gis.__loaded_file_path__)
-    outputFunctions.addTextToTextBox(result)
+    # if an output file name was provided this check will print a line on screen
+    if(outFileStatus):
+        result += "This output is also saved in the choosen file (" + outFileNameStr + ")"
+        outputFunctions.addTextToTextBox(result)
+    else:
+        outputFunctions.addTextToTextBox(result)
 
 
 def makeThePDFParseCommandReady(nbr):
     """ This function makes the PDF parser command ready and prints the result to the textbox """
-
-    #optionsArr = {"objectId": objectId, "displayHash": displayHash, "pythonFromObjID": pythonFromObjID,
-    # "pythonFromParsedPDF": pythonFromParsedPDF, "rawOutput": rawOutput, "displayStats": displayStats, "displayDebug": displayDebug}
 
     switchesList = []
     programName = gis.__pdf_parser_name__
 
     if (nbr["objectId"].get() == True):
         objectId = askPrompt(gis.__object_id_title__, gis.__object_id_text__)
-        switchesList.append("-o" + objectId)
+        if (objectId == '' or objectId == None):
+            messagebox.showerror(gis.__noObjectId_title__, gis.__noObjectId_text__)
+        else:
+            # checks whether the input is an integer or not
+            if (isInteger(objectId)):
+                switchesList.append("-o" + objectId)
+            else:
+                messagebox.showerror(gis.__noObjectId_title__, gis.__noObjectId_2_text__)
 
     if (nbr["displayHash"].get() == True):
         switchesList.append("-H")
 
     if (nbr["pythonFromObjID"].get() == True):
         outputfilename = askPrompt(gis.__object_id_title__, gis.__generateembedded_text__)
-        switchesList.append("--generateembedded=" + outputfilename)
+        if(outputfilename == '' or outputfilename == None):
+            messagebox.showerror(gis.__noObjectId_title__, gis.__noPythonObjectId_text__)
+            switchesList.append("--generateembedded=1")
+        else:
+            # checks whether the input is an integer or not
+            if(isInteger(outputfilename)):
+                switchesList.append("--generateembedded=" + outputfilename)
+            else:
+                messagebox.showerror(gis.__noObjectId_title__, gis.__noPythonObjectId_text__)
+                switchesList.append("--generateembedded=1")
 
     if (nbr["pythonFromParsedPDF"].get() == True):
         switchesList.append("-g")
@@ -183,20 +226,17 @@ def makeThePDFParseCommandReady(nbr):
     outputFunctions.addTextToTextBox(result)
 
 
-def makePDFCreationCommandReady(nbr, embedStatus):
+def makePDFCreationCommandReady(nbr):
     """ This function prepares the PDF embedded and javascript to pd command ready and prints the result in textbox """
-
-    # optionsArr = {"openAutomatically": openAutomatically, "buttonToLaunch": buttonToLaunch,
-    #               "hideEmbededFile": hideEmbededFile, "textToDisplay": textToDisplay,
-    #               "fileNameInPDFObj": fileNameInPDFObj, "javascriptCode": javascriptCode,
-    #               "javascriptFile": javascriptFile}
-
 
     switchesList = []
     programName = ""
 
-    if(embedStatus):
-        # ******************** for embedding ********************
+
+    payloadFilePath = askPrompt(gis.__enter_embedding_file_path_title__, gis.__enter_embedding_file_path_text__)
+
+    if(payloadFilePath != '' and payloadFilePath != None):
+        # file name of the file to be embedded is provided
 
         if (nbr["openAutomatically"].get() == True):
             switchesList.append("-a")
@@ -208,71 +248,125 @@ def makePDFCreationCommandReady(nbr, embedStatus):
             switchesList.append("-s")
 
         if (nbr["textToDisplay"].get() == True):
-            msgText = askPrompt(gis.__type_message_title__, gis.__type_display_text)
-            switchesList.append("-m '" + msgText + "'")
+            msgText = askPrompt(gis.__type_message_title__, gis.__type_message_text)
+            if (msgText == '' or msgText == None):
+                # no message given
+                messagebox.showerror(gis.__type_message_error_title__, gis.__type_message_error_text__)
+            else:
+                # print this msg
+                switchesList.append("-m '" + msgText + "'")
 
         if (nbr["fileNameInPDFObj"].get() == True):
             displayfilename = askPrompt(gis.__display_file_name__, gis.__display_file_text__)
-
-            displayfilename = isVariableBlank(displayfilename)
-
-            switchesList.append("-n" + displayfilename)
+            if (displayfilename == '' or displayfilename == None):
+                # cancelled or left blank
+                messagebox.showerror(gis.__javascript_file_add_error_title__, gis.__javascript_file_add_error_text__)
+            else:
+                # file name provided
+                switchesList.append("-n " + displayfilename)
 
         else:
             switchesList.append("")
 
+        switchesList.append(payloadFilePath)
         programName = gis.__make_pdf_embedded_name__
 
+        newPDFfilename = askPrompt(gis.__new_file_name_title__, gis.__new_file_name_text__)
+        if (newPDFfilename == '' or newPDFfilename == None):
+            # if user left blank or cancelled
+            messagebox.showerror(gis.__no_new_file_name_title__, gis.__no_new_file_name_text__)
+            gis.__loaded_file_path__ = "javascriptCodePDF.pdf"
+        else:
+            gis.__loaded_file_path__ = newPDFfilename + ".pdf"
+
+        result = excuteCommand(programName, switchesList, gis.__loaded_file_path__)
+        # its a string
+        print("S.......................................")
+        print(type(result))
+        print(result)
+        print(".......................................E")
+        outputFunctions.addTextToTextBox(result)
+
     else:
-        # ******************** for JS ********************
+        # file name not provided
+        messagebox.showerror(gis.__no_payload_file_selected_title__, gis.__no_payload_file_selected_text__)
+        outputFunctions.addTextToTextBox(" ")
 
-        if (nbr["javascriptCode"].get() == True):
-            jsCode = askPrompt(gis.__javascript_title__, gis.__javascript_msg__)
 
-            jsCode = isVariableBlank(jsCode)
+
+def makeJavascriptPDFCommandReady(nbr):
+
+    # TODO: the program does not return shell errors like " /bin/sh: 1: Syntax error: "(" unexpected " that is why the program can't inform the user that the pdf is saved successfully
+    # TODO: beccause when it causes a shell error or when it successfully executes the command, it always returns empty string
+    # TODO: alert the user if the command successfully created the file
+
+    switchesList = []
+    programName = ""
+
+    if (nbr["javascriptCode"].get() == True):
+        jsCode = askPrompt(gis.__javascript_title__, gis.__javascript_msg__)
+        if (jsCode == '' or jsCode == None):
+            # cancelled or left blank
+            messagebox.showerror(gis.__no_javascript_title__, gis.__no_javascript_text__)
+        else:
+            # js code provided
             switchesList.append("-j" + jsCode)
 
-        if (nbr["javascriptFile"].get() == True):
-            jsFile = askPrompt(gis.__javascript_title__, gis.__javascript_file__)
-            jsFile = isVariableBlank(jsFile)
+    if (nbr["javascriptFile"].get() == True):
+        jsFile = askPrompt(gis.__javascript_title__, gis.__javascript_file__)
+        if (jsFile == '' or jsFile == None):
+            # cancelled or left blank
+            messagebox.showerror(gis.__no_javascript_file_title__, gis.__no_javascript_file_text__)
+        else:
+            # js file provided
             switchesList.append("-f" + jsFile)
 
-        else:
-            switchesList.append("")
+    else:
+        switchesList.append("")
 
-        programName = gis.__make_pdf_javascript_name__
+
+    programName = gis.__make_pdf_javascript_name__
+    newPDFname = askPrompt(gis.__new_file_name_title__, gis.__new_file_name_text__)
+    if (newPDFname == '' or newPDFname == None):
+        # if user left blank or cancelled
+        messagebox.showerror(gis.__no_new_file_name_title__, gis.__no_new_file_name_text__)
+        gis.__loaded_file_path__ = "javascriptembeddedPDF.pdf"
+    else:
+        gis.__loaded_file_path__ = newPDFname + ".pdf"
 
 
     result = excuteCommand(programName, switchesList, gis.__loaded_file_path__)
+    # its a string .......... see todo for more info
     outputFunctions.addTextToTextBox(result)
 
 
 """ **************************** | Creaet content for tabs functions | **************************** """
 
-def createPDFidContent(pdfIDTab):
+def createPDFidContent(program, pdfIDTab):
     """ function creates the content of the PDF ID tab and add its options """
 
-    allNames = createChkBox(pdfIDTab, "Display all the names", "allNames", "none 10", 2, 0, W)
-    extraData = createChkBox(pdfIDTab, "Display extra data", "extraData", "none 10", 3, 0, W)
-    noZero = createChkBox(pdfIDTab, "No zeros (supress output for counts equal to zero)", "noZero", "none 10", 4, 0, W)
-    noJavascript = createChkBox(pdfIDTab, "Disable JavaScript and auto launch", "noJavascript", "none 10", 5, 0, W)
-    fileScan = createChkBox(pdfIDTab, "force the scan of the file, even without proper %PDF header", "fileScan", "none 10", 6, 0, W)
-    outputLogFile = createChkBox(pdfIDTab, "Output to log file", "outputLogFile", "none 10", 7, 0, W)
+    allNames = createChkBox(pdfIDTab, "Display all the names", "none 10", 2, 0, W)
+    extraData = createChkBox(pdfIDTab, "Display extra data", "none 10", 3, 0, W)
+    noZero = createChkBox(pdfIDTab, "No zeros (supress output for counts equal to zero)", "none 10", 4, 0, W)
+    noJavascript = createChkBox(pdfIDTab, "Disable JavaScript and auto launch", "none 10", 5, 0, W)
+    fileScan = createChkBox(pdfIDTab, "force the scan of the file, even without proper %PDF header", "none 10", 6, 0, W)
+    outputLogFile = createChkBox(pdfIDTab, "Output to log file", "none 10", 7, 0, W)
+    scanADirectory = createChkBox(pdfIDTab, "Scan a directory", "none 10", 8, 0, W)
 
-    optionsArr = {"allNames": allNames, "extraData": extraData, "noZero": noZero, "noJavascript": noJavascript, "fileScan": fileScan, "outputLogFile": outputLogFile}
-    Button(pdfIDTab, text="OK", width=14, command= lambda: makeThePDFIdCommandReady(optionsArr)).grid(row=9, column=0, sticky=W)
+    optionsArr = {"allNames": allNames, "extraData": extraData, "noZero": noZero, "noJavascript": noJavascript, "fileScan": fileScan, "outputLogFile": outputLogFile, "scanADirectory": scanADirectory}
+    Button(pdfIDTab, text="OK", width=14, command= lambda: makeThePDFIdCommandReady(program, optionsArr)).grid(row=9, column=0, sticky=W)
 
 
 def createPDFParserContent(pdfParseTab):
     """ function creates the content of PDF parser tab and add its options """
 
-    objectId = createChkBox(pdfParseTab, "Object ID", "objectId", "none 10", 0, 0, W)
-    displayHash = createChkBox(pdfParseTab, "Display Hash", "displayHash", "none 10", 1, 0, W)
-    pythonFromObjID = createChkBox(pdfParseTab, "Generate Python program from object ID", "pythonFromObjID", "none 10", 2, 0, W)
-    pythonFromParsedPDF = createChkBox(pdfParseTab, "Generate Python program from parsed PDF file", "pythonFromParsedPDF", "none 10", 3, 0, W)
-    rawOutput = createChkBox(pdfParseTab, "Raw output for data and filters", "rawOutput", "none 10", 4, 0, W)
-    displayStats = createChkBox(pdfParseTab, "Display stats for pdf document", "displayStats", "none 10", 5, 0, W)
-    displayDebug = createChkBox(pdfParseTab, "Display debug info", "displayDebug", "none 10", 6, 0, W)
+    objectId = createChkBox(pdfParseTab, "Object ID", "none 10", 0, 0, W)
+    displayHash = createChkBox(pdfParseTab, "Display Hash", "none 10", 1, 0, W)
+    pythonFromObjID = createChkBox(pdfParseTab, "Generate Python program from object ID", "none 10", 2, 0, W)
+    pythonFromParsedPDF = createChkBox(pdfParseTab, "Generate Python program from parsed PDF file", "none 10", 3, 0, W)
+    rawOutput = createChkBox(pdfParseTab, "Raw output for data and filters", "none 10", 4, 0, W)
+    displayStats = createChkBox(pdfParseTab, "Display stats for pdf document", "none 10", 5, 0, W)
+    displayDebug = createChkBox(pdfParseTab, "Display debug info", "none 10", 6, 0, W)
 
     optionsArr = {"objectId": objectId, "displayHash": displayHash, "pythonFromObjID": pythonFromObjID, "pythonFromParsedPDF": pythonFromParsedPDF, "rawOutput": rawOutput, "displayStats": displayStats, "displayDebug": displayDebug}
     Button(pdfParseTab, text="Ok", width=14, command= lambda: makeThePDFParseCommandReady(optionsArr)).grid(row=8, column=0, sticky=W)
@@ -282,24 +376,24 @@ def createMakePDFContent(makePDFTab):
     """ function creates the content of the make PDF tab and add its options """
 
     Label(makePDFTab, text="Embed to PDF", font="none 10").grid(row=8, column=0, sticky=W)
-    openAutomatically = createChkBox(makePDFTab, "Open the embedded file automatically", "openAutomatically", "none 10", 0, 0, W)
-    buttonToLaunch = createChkBox(makePDFTab, "Add a 'button' to launch the embedded file", "buttonToLaunch", "none 10", 1, 0, W)
-    hideEmbededFile = createChkBox(makePDFTab, "Hide the embedded file", "hideEmbededFile", "none 10", 2, 0, W)
-    textToDisplay = createChkBox(makePDFTab, "Text to display in the PDF document", "textToDisplay", "none 10", 3, 0, W)
-    fileNameInPDFObj = createChkBox(makePDFTab, "Filename to use in PDF objects or none for default one", "fileNameInPDFObj", "none 10", 4, 0, W)
+    openAutomatically = createChkBox(makePDFTab, "Open the embedded file automatically", "none 10", 0, 0, W)
+    buttonToLaunch = createChkBox(makePDFTab, "Add a 'button' to launch the embedded file", "none 10", 1, 0, W)
+    hideEmbededFile = createChkBox(makePDFTab, "Hide the embedded file", "none 10", 2, 0, W)
+    textToDisplay = createChkBox(makePDFTab, "Text to display in the PDF document", "none 10", 3, 0, W)
+    fileNameInPDFObj = createChkBox(makePDFTab, "Filename to use in PDF objects or none for default one", "none 10", 4, 0, W)
 
     optionsArrEmbed = {"openAutomatically": openAutomatically, "buttonToLaunch": buttonToLaunch, "hideEmbededFile": hideEmbededFile, "textToDisplay": textToDisplay, "fileNameInPDFObj": fileNameInPDFObj}
-    Button(makePDFTab, text="Embed", width=14, command=lambda: makePDFCreationCommandReady(optionsArrEmbed, True)).grid(row=5, column=0, sticky=W)
+    Button(makePDFTab, text="Embed", width=14, command=lambda: makePDFCreationCommandReady(optionsArrEmbed)).grid(row=5, column=0, sticky=W)
 
 
     Label(makePDFTab, text="", font="none 10").grid(row=6, column=0, sticky=W)
     Label(makePDFTab, text="", font="none 10").grid(row=7, column=0, sticky=W)
     Label(makePDFTab, text="Add Javascript to PDF", font="none 10").grid(row=8, column=0, sticky=W)
-    javascriptCode = createChkBox(makePDFTab, "Type Javascript to embed or none for default code", "javascriptCode", "none 10", 9, 0, W)
-    javascriptFile = createChkBox(makePDFTab, "Select Javascript file to embed or none for default", "javascriptFile", "none 10", 10, 0, W)
+    javascriptCode = createChkBox(makePDFTab, "Type Javascript to embed or none for default code", "none 10", 9, 0, W)
+    javascriptFile = createChkBox(makePDFTab, "Select Javascript file to embed or none for default", "none 10", 10, 0, W)
 
     optionsArrJavascript = {"javascriptCode": javascriptCode, "javascriptFile": javascriptFile}
-    Button(makePDFTab, text="Add", width=14, command=lambda: makePDFCreationCommandReady(optionsArrJavascript, False)).grid(row=11, column=0, sticky=W)
+    Button(makePDFTab, text="Add", width=14, command=lambda: makeJavascriptPDFCommandReady(optionsArrJavascript)).grid(row=11, column=0, sticky=W)
 
 
 def createLabel(aboutPage, title, text, row):
@@ -334,7 +428,7 @@ def createTabframeAndTab(program):
 
 
     #  ------------ Add the content of the PDF Id (tab) here -------------
-    createPDFidContent(pdfIDTab)
+    createPDFidContent(program, pdfIDTab)
 
 
     #  ------------ Add the content of the PDF parser (tab) here -------------
